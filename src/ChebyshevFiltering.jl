@@ -1,6 +1,7 @@
 module ChebyshevFiltering
 
 using KrylovKit
+using SparseArrays
 
 export renormalization_hamiltonian!
 
