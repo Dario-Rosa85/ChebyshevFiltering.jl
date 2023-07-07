@@ -5,7 +5,7 @@ using SparseArrays
 using Polynomials
 using LinearAlgebra
 
-export renormalization_hamiltonian!
+export renormalization_hamiltonian!, KPM_density
 
 include(joinpath(@__DIR__, "hamiltonian_rescaling/renormalization_hamiltonian.jl"))
 include(joinpath(@__DIR__, "KPM_density/KPM_density.jl"))
