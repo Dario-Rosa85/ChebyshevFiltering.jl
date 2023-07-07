@@ -2,12 +2,9 @@ using ChebyshevFiltering
 using Test
 using SparseArrays
 using LinearAlgebra
-include("/home/dario/Dropbox/delocalization_and_growth/revision_chaos_paper_code/QMB_module.jl")
-using .ImpurityUtilities
 
-const number_of_majorana = 20
-majorana_matrices = majorana_matrices_chiral(number_of_majorana)
-hamiltonian_matrix, edges_graph, weights_graph = hamiltonian_chiral(number_of_majorana, majorana_matrices, 4, 1.0)
+hamiltonian_matrix = sparse(randn(Float64, (300, 300)))
+hamiltonian_matrix = hamiltonian_matrix + hamiltonian_matrix'
 
 @testset "renormalization_hamiltonian!" begin
     ChebyshevFiltering.renormalization_hamiltonian!(hamiltonian_matrix)
@@ -30,6 +27,6 @@ end
     using NumericalIntegration
     expected_value = NumericalIntegration.integrate(x_values, y_values)
 
-    @test (real_number - 5 <= expected_value <= real_number + 5)
+    @test (real_number - 2 <= expected_value <= real_number + 2)
     
 end
