@@ -1,4 +1,4 @@
-function hamiltonian_moments(max_degree, stochastic_dimension, hamiltonian_matrix)
+function hamiltonian_moments(max_degree, stochastic_dimension, hamiltonian_matrix::SparseMatrixCSC{ComplexF64, Int64})
     hilbert_space_dimension = size(hamiltonian_matrix, 2)
     random_states_matrix = orthogonalize_QR(randn(ComplexF64, hilbert_space_dimension, stochastic_dimension))
     random_states = [random_states_matrix[:, i] for i in axes(random_states_matrix, 2)]
