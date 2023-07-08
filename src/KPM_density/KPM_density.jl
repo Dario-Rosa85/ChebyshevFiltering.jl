@@ -57,7 +57,7 @@ function KPM_density_moments_given(moments_computed)
     return density_KPM
 end
 
-function KPM_density(hamiltonian_matrix, max_degree::Int64=150, stochastic_dimension::Int64=30)
+function KPM_density(hamiltonian_matrix, max_degree, stochastic_dimension)
     moments_computed = size(hamiltonian_matrix, 2) .* hamiltonian_moments(max_degree, stochastic_dimension, hamiltonian_matrix)
     return KPM_density_moments_given(moments_computed)
 end

@@ -19,8 +19,10 @@ end
     ChebyshevFiltering.renormalization_hamiltonian!(hamiltonian_matrix)
     lambda_min = -0.1
     lambda_max = 0.1
+    max_degree_KPM = 150
+    stochastic_dimension_KPM = 30
     real_number = length([value  for value in eigvals(Matrix(hamiltonian_matrix)) if lambda_min < value < lambda_max])
-    approximated_density = KPM_density(hamiltonian_matrix)
+    approximated_density = KPM_density(hamiltonian_matrix, max_degree_KPM, stochastic_dimension_KPM)
     x_values = lambda_min:((lambda_max - lambda_min) / 200):lambda_max
     y_values = [approximated_density(x) for x in x_values]
 
