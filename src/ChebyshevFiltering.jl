@@ -13,5 +13,6 @@ include(joinpath(@__DIR__, "KPM_density/KPM_density.jl"))
 include(joinpath(@__DIR__, "optimal_search_vectors_polynomial_order/optimal_values_parameters.jl"))
 include(joinpath(@__DIR__, "orthogonalization_routines/orthogonalization.jl"))
 include(joinpath(@__DIR__, "expansion_damping_coeffs/expansion_damping_coeffs.jl"))
+include(joinpath(@__DIR__, "polynomial_filtering/polynomial_filtering.jl"))
 
 end # module ChebyshevFiltering
