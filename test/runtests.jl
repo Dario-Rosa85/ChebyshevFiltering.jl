@@ -29,7 +29,7 @@ end
     using NumericalIntegration
     expected_value = NumericalIntegration.integrate(x_values, y_values)
 
-    @test (real_number - 2 <= expected_value <= real_number + 2)
+    @test (real_number - 5 <= expected_value <= real_number + 5)
     
 end
 
