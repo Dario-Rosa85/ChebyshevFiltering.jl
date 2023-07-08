@@ -51,8 +51,8 @@ end
 
 @testset "convergence eigenvalues" begin
     ChebyshevFiltering.renormalization_hamiltonian!(hamiltonian_matrix)
-    lambda_min = -0.1
-    lambda_max = 0.1
+    lambda_min = -0.3
+    lambda_max = -0.2
     log_path = "/home/dario/Dropbox/delocalization_and_growth_data/log_try/"
     log_file_name = "log_try.txt"
     converged_target_values, converged_target_vectors = eigen_cheb(hamiltonian_matrix, log_path, log_file_name, lambda_min, lambda_max)
