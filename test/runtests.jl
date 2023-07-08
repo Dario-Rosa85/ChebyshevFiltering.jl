@@ -32,3 +32,19 @@ end
     @test (real_number - 2 <= expected_value <= real_number + 2)
     
 end
+
+@testset "optimal_parameters_estimate" begin
+    ChebyshevFiltering.renormalization_hamiltonian!(hamiltonian_matrix)
+    max_degree_KPM = 150
+    stochastic_dimension_KPM = 30
+    lambda_min = -0.6
+    lambda_max = -0.4
+    search_target_ratio = 3 
+    e_max = 1.
+    e_min = -1. 
+    N_0 = 6.23
+    real_number = length([value  for value in eigvals(Matrix(hamiltonian_matrix)) if lambda_min < value < lambda_max])
+    search_vector_numbers, polynomial_degree_optim = ChebyshevFiltering.optimal_search_degree(hamiltonian_matrix, lambda_min, lambda_max, search_target_ratio, max_degree_KPM, stochastic_dimension_KPM, e_max, e_min, N_0)
+
+    @test abs(search_vector_numbers - search_target_ratio * real_number) <= 10
+end
