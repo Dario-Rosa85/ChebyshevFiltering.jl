@@ -40,3 +40,71 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
         end        
     end
 end
+
+function filtering_step!(search_vectors_list, u_vectors, w_vectors, provisional_vector, polynomial_degree_optim, full_coeff, hamiltonian_matrix, lambda_max, lambda_min, e_max::Float64=1.0, e_min::Float64=-1.0)
+    length_chunks = collect(Iterators.partition(1:size(search_vectors_list, 2), Int64(floor(size(search_vectors_list, 2) / (Threads.nthreads())))))
+    @inbounds Threads.@threads for i in 1:Threads.nthreads() 
+        @inbounds for k in length_chunks[i]
+            mul!(u_vectors[k], hamiltonian_matrix, search_vectors_list[:, k])
+            provisional_vector[Threads.threadid()] = search_vectors_list[:, k]
+            mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, u_vectors[k], 2.0, -1.0)
+            w_vectors[k] = provisional_vector[Threads.threadid()]
+            search_vectors_list[:, k] .= full_coeff[1] * search_vectors_list[:, k] .+ full_coeff[2] .* u_vectors[k] .+ full_coeff[3] .* w_vectors[k]   
+        end
+    end
+    @inbounds Threads.@threads for i in 1:Threads.nthreads()
+        @inbounds for k in length_chunks[i]
+            @inbounds for n in 4:polynomial_degree_optim 
+                provisional_vector[Threads.threadid()] = u_vectors[k]
+                mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, w_vectors[k], 2.0, -1.0)
+                u_vectors[k] = w_vectors[k]
+                w_vectors[k] = provisional_vector[Threads.threadid()]
+                search_vectors_list[:, k] .+= full_coeff[n] .* w_vectors[k]
+            end
+        end
+    end
+    return search_vectors_list        
+end
+
+function convergence_test(Ritz_values, Ritz_vectors, residuals, lambda_min, lambda_max, epsilon_convergence)
+    converged_target_vectors = Vector{ComplexF64}[]
+    converged_target_values = Float64[]
+    not_converged_residuals = Float64[]
+    @inbounds for i in 1:length(Ritz_values) 
+        if lambda_min < Ritz_values[i] < lambda_max
+            if residuals[i] < epsilon_convergence
+                push!(converged_target_vectors, Ritz_vectors[i])
+                push!(converged_target_values, Ritz_values[i])
+            else
+                push!(not_converged_residuals, residuals[i])
+            end
+        end
+    end
+    return converged_target_values, converged_target_vectors, not_converged_residuals     
+end
+
+function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, provisional_vector, hamiltonian_matrix)
+    Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, provisional_vector, hamiltonian_matrix) 
+    Rayleigh_Ritz_pairs = eigen(Ritz_matrix)
+    Ritz_values = real(Rayleigh_Ritz_pairs.values)
+    residuals = zeros(size(search_vectors_list, 2))
+    @inbounds Threads.@threads for i in 1:size(search_vectors_list, 2)
+        mul!(Ritz_vectors[i], search_vectors_list, Rayleigh_Ritz_pairs.vectors[:, i])
+        residuals[i] = norm(hamiltonian_matrix * Ritz_vectors[i] .- Ritz_values[i] .* Ritz_vectors[i])
+    end
+    return Ritz_values, residuals    
+end
+
+function Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, provisional_vector, hamiltonian_matrix)
+    @inbounds Threads.@threads for i in 1:size(search_vectors_list, 2)
+        mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, search_vectors_list[:, i]) 
+        @inbounds for j in i:size(search_vectors_list, 2)
+            if j == i
+                Ritz_matrix[j, i] = dot(search_vectors_list[:, j], provisional_vector[Threads.threadid()])
+            else
+                Ritz_matrix[j, i] = dot(search_vectors_list[:, j], provisional_vector[Threads.threadid()])
+                Ritz_matrix[i, j] = conj(Ritz_matrix[j, i]) 
+            end
+        end
+    end   
+end
