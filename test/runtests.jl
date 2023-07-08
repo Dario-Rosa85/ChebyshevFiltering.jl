@@ -22,7 +22,7 @@ end
     max_degree_KPM = 150
     stochastic_dimension_KPM = 30
     real_number = length([value  for value in eigvals(Matrix(hamiltonian_matrix)) if lambda_min < value < lambda_max])
-    approximated_density = KPM_density(hamiltonian_matrix, max_degree_KPM, stochastic_dimension_KPM)
+    approximated_density = ChebyshevFiltering.KPM_density(hamiltonian_matrix, max_degree_KPM, stochastic_dimension_KPM)
     x_values = lambda_min:((lambda_max - lambda_min) / 200):lambda_max
     y_values = [approximated_density(x) for x in x_values]
 
@@ -47,4 +47,14 @@ end
     search_vector_numbers, polynomial_degree_optim = ChebyshevFiltering.optimal_search_degree(hamiltonian_matrix, lambda_min, lambda_max, search_target_ratio, max_degree_KPM, stochastic_dimension_KPM, e_max, e_min, N_0)
 
     @test abs(search_vector_numbers - search_target_ratio * real_number) <= 10
+end
+
+@testset "convergence eigenvalues" begin
+    ChebyshevFiltering.renormalization_hamiltonian!(hamiltonian_matrix)
+    lambda_min = -0.1
+    lambda_max = 0.1
+    log_path = "/home/dario/Dropbox/delocalization_and_growth_data/log_try/"
+    log_file_name = "log_try.txt"
+    converged_target_values, converged_target_vectors = eigen_cheb(hamiltonian_matrix, log_path, log_file_name, lambda_min, lambda_max)
+    @test isapprox(converged_target_values, [value  for value in eigvals(Matrix(hamiltonian_matrix)) if lambda_min < value < lambda_max])
 end
