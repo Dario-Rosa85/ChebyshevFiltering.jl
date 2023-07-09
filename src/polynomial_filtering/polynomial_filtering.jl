@@ -12,7 +12,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
     while convergence_reached == "false"
         ##########################################################################################################
         ########Filtering step and orthogonalization
-        filtering_step!(search_vectors_list, u_vectors, w_vectors, provisional_vector, polynomial_degree_optim, full_coeff, hamiltonian_matrix, lambda_max, lambda_min)
+        filtering_step!(search_vectors_list, u_vectors, w_vectors, provisional_vector, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
         search_vectors_list = orthogonalize_QR(search_vectors_list)
         ##########################################################################################################
         ##########################################################################################################
@@ -41,7 +41,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
     end
 end
 
-function filtering_step!(search_vectors_list, u_vectors, w_vectors, provisional_vector, polynomial_degree_optim, full_coeff, hamiltonian_matrix, lambda_max, lambda_min, e_max::Float64=1.0, e_min::Float64=-1.0)
+function filtering_step!(search_vectors_list, u_vectors, w_vectors, provisional_vector, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
     length_chunks = collect(Iterators.partition(1:size(search_vectors_list, 2), Int64(floor(size(search_vectors_list, 2) / (Threads.nthreads())))))
     @inbounds Threads.@threads for i in 1:Threads.nthreads() 
         @inbounds for k in length_chunks[i]
