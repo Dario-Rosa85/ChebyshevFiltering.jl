@@ -70,7 +70,7 @@ function convergence_test(Ritz_values, Ritz_vectors, residuals, lambda_min, lamb
     converged_target_vectors = Vector{ComplexF64}[]
     converged_target_values = Float64[]
     not_converged_residuals = Float64[]
-    @inbounds for i in 1:length(Ritz_values) 
+    @inbounds for i in eachindex(Ritz_values) 
         if lambda_min < Ritz_values[i] < lambda_max
             if residuals[i] < epsilon_convergence
                 push!(converged_target_vectors, Ritz_vectors[i])
