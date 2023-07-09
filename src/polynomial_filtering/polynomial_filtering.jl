@@ -96,7 +96,7 @@ function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vector
 end
 
 function Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, provisional_vector, hamiltonian_matrix)
-    @inbounds Threads.@threads for i in 1:size(search_vectors_list, 2)
+    @inbounds Threads.@threads for i in axes(search_vectors_list, 2)
         mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, search_vectors_list[:, i]) 
         @inbounds for j in i:size(search_vectors_list, 2)
             if j == i
