@@ -99,10 +99,8 @@ function Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, provis
     @inbounds Threads.@threads for i in axes(search_vectors_list, 2)
         mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, search_vectors_list[:, i]) 
         @inbounds for j in i:size(search_vectors_list, 2)
-            if j == i
-                Ritz_matrix[j, i] = dot(search_vectors_list[:, j], provisional_vector[Threads.threadid()])
-            else
-                Ritz_matrix[j, i] = dot(search_vectors_list[:, j], provisional_vector[Threads.threadid()])
+            Ritz_matrix[j, i] = dot(search_vectors_list[:, j], provisional_vector[Threads.threadid()])
+            if j != i
                 Ritz_matrix[i, j] = conj(Ritz_matrix[j, i]) 
             end
         end
