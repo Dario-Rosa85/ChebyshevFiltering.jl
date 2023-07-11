@@ -1,4 +1,4 @@
-function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name)
+function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{ComplexF64, Int64}, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name)
     ########Random vectors inizialization
     search_vectors_list = orthogonalize_QR(randn(ComplexF64, size(hamiltonian_matrix, 2), search_vector_numbers))
     Ritz_matrix = Matrix{ComplexF64}(undef, size(search_vectors_list, 2), size(search_vectors_list, 2))
