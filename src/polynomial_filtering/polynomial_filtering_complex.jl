@@ -41,7 +41,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
     end
 end
 
-function filtering_step!(search_vectors_list, u_vectors, w_vectors, provisional_vector, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
+function filtering_step!(search_vectors_list::Matrix{ComplexF64}, u_vectors::Array{Array{ComplexF64}}, w_vectors::Array{Array{ComplexF64}}, provisional_vector::Array{Array{ComplexF64}}, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{ComplexF64, Int64})
     length_chunks = collect(Iterators.partition(1:size(search_vectors_list, 2), Int64(floor(size(search_vectors_list, 2) / (Threads.nthreads())))))
     @inbounds Threads.@threads for i in 1:Threads.nthreads() 
         @inbounds for k in length_chunks[i]
@@ -66,7 +66,7 @@ function filtering_step!(search_vectors_list, u_vectors, w_vectors, provisional_
     return search_vectors_list        
 end
 
-function convergence_test(Ritz_values, Ritz_vectors, residuals, lambda_min, lambda_max, epsilon_convergence)
+function convergence_test(Ritz_values, Ritz_vectors::Array{Array{ComplexF64}}, residuals, lambda_min, lambda_max, epsilon_convergence)
     converged_target_vectors = Vector{ComplexF64}[]
     converged_target_values = Float64[]
     not_converged_residuals = Float64[]
@@ -83,7 +83,7 @@ function convergence_test(Ritz_values, Ritz_vectors, residuals, lambda_min, lamb
     return converged_target_values, converged_target_vectors, not_converged_residuals     
 end
 
-function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, provisional_vector, hamiltonian_matrix)
+function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix::Matrix{ComplexF64}, Ritz_vectors::Array{Array{ComplexF64}}, search_vectors_list::Matrix{ComplexF64}, provisional_vector::Array{Array{ComplexF64}}, hamiltonian_matrix::SparseMatrixCSC{ComplexF64, Int64})
     Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, provisional_vector, hamiltonian_matrix) 
     Rayleigh_Ritz_pairs = eigen(Ritz_matrix)
     Ritz_values = real(Rayleigh_Ritz_pairs.values)
@@ -95,7 +95,7 @@ function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vector
     return Ritz_values, residuals    
 end
 
-function Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, provisional_vector, hamiltonian_matrix)
+function Rayleigh_Ritz_matrix_building!(Ritz_matrix::Matrix{ComplexF64}, search_vectors_list::Matrix{ComplexF64}, provisional_vector::Array{Array{ComplexF64}}, hamiltonian_matrix::SparseMatrixCSC{ComplexF64, Int64})
     @inbounds Threads.@threads for i in axes(search_vectors_list, 2)
         mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, search_vectors_list[:, i]) 
         @inbounds for j in i:size(search_vectors_list, 2)
