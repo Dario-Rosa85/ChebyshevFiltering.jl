@@ -30,11 +30,18 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
             if ((epsilon_convergence < smallest_not_converged_residual < epsilon_convergence^(1/2)) || (number_of_iterations < 4) || (length(not_converged_residuals) > 10))
                 convergence_reached = "false"
                 number_of_iterations += 1
-                # open(log_path * log_file_name, "a") do io
-                #     println(io, "convergence not yet reached. Time is ", Dates.now())
-                # end
+                if log_path != "none" && log_file_name != "none"
+                    open(joinpath(log_path, log_file_name), "a") do io
+                        println(io, "Convergence not yet reached. Time is ", Dates.now())
+                    end
+                end
             else
                 convergence_reached = "true"
+                if log_path != "none" && log_file_name != "none"
+                    open(joinpath(log_path, log_file_name), "a") do io
+                        println(io, "Convergence reached. Time is ", Dates.now())
+                    end
+                end
                 return converged_target_values, converged_target_vectors
             end
         end        
