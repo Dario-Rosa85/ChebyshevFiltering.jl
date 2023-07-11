@@ -3,7 +3,7 @@ using Test
 using SparseArrays
 using LinearAlgebra
 
-hamiltonian_matrix = sparse(randn(ComplexF64, (300, 300)))
+hamiltonian_matrix = sparse(randn(Float64, (300, 300)))
 hamiltonian_matrix = hamiltonian_matrix + hamiltonian_matrix'
 
 @testset "renormalization_hamiltonian!" begin
