@@ -1,8 +1,8 @@
 # ChebyshevFiltering.jl
 
-A Julia code for high-performance Chebyshev polynomial diagonalization. In the current version, the package is built with the purpose to find all the eigenvalues and the corresponding eigenvectors -- of a given sparse and Hermitian (both real and complex) matrix -- lying in a chosen interval $\left[\lambda_{\mathrm{min}}, \, \lambda_{\mathrm{max}} \right]$.
+A Julia code for high-performance Chebyshev polynomial diagonalization. In the current version, the package is built with the purpose to find all the eigenvalues and the corresponding eigenvectors -- of a given sparse and Hermitian (both real and complex) matrix -- lying in a chosen interval $\left[\lambda_{\mathrm{min}}, \ \lambda_{\mathrm{max}} \right]$.
 
-It uses the mathematical algorithm developed in [Journal of Computational Physics 325, 226 (2016)](https://www.sciencedirect.com/science/article/abs/pii/S0021999116303837?via%3Dihub). As such, it renormalizes authomatically the matrix such that its spectrum lies in the interval $\left[-1, \, 1 \right]$.
+It uses the mathematical algorithm developed in [Journal of Computational Physics 325, 226 (2016)](https://www.sciencedirect.com/science/article/abs/pii/S0021999116303837?via%3Dihub). As such, it renormalizes authomatically the matrix such that its spectrum lies in the interval $\left[-1, \ 1 \right]$.
 
 ## Example of usage
 
