@@ -24,7 +24,12 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
         converged_target_values, converged_target_vectors, not_converged_residuals = convergence_test(Ritz_values, Ritz_vectors, residuals, lambda_min, lambda_max, epsilon_convergence)
         if length(not_converged_residuals) == 0
             convergence_reached = "true"
-            return converged_target_values, reduce(hcat, converged_target_vectors)
+            if log_path != "none" && log_file_name != "none"
+                open(joinpath(log_path, log_file_name), "a") do io
+                    println(io, "Convergence reached. Time is ", Dates.now())
+                end
+            end
+            return converged_target_values, converged_target_vectors
         else
             smallest_not_converged_residual = first(sort(not_converged_residuals))
             if ((epsilon_convergence < smallest_not_converged_residual < epsilon_convergence^(1/2)) || (number_of_iterations < 4) || (length(not_converged_residuals) > 10))
