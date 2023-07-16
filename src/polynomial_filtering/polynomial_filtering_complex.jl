@@ -100,7 +100,7 @@ function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix::Matrix{ComplexF64}, Ritz_ve
     Rayleigh_Ritz_pairs = eigen(Ritz_matrix)
     Ritz_values = real(Rayleigh_Ritz_pairs.values)
     residuals = zeros(size(search_vectors_list, 2))
-    @inbounds Threads.@threads :static for i in 1:size(search_vectors_list, 2)
+    @inbounds Threads.@threads for i in 1:size(search_vectors_list, 2)
         mul!(Ritz_vectors[i], search_vectors_list, Rayleigh_Ritz_pairs.vectors[:, i])
         residuals[i] = norm(hamiltonian_matrix * Ritz_vectors[i] .- Ritz_values[i] .* Ritz_vectors[i])
     end
