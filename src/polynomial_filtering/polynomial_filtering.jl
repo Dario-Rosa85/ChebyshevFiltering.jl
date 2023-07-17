@@ -111,7 +111,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
 end
 
 function filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
-    chunks = Iterators.partition(axes(search_vectors_list, 2), Int64(floor(length(axes(search_vectors_list, 2)) / (2 * Threads.nthreads()))))
+    chunks = Iterators.partition(axes(search_vectors_list, 2), max(2,Int64(floor(length(axes(search_vectors_list, 2)) / (2 * Threads.nthreads())))))
     Threads.@sync for chunk in chunks
         Threads.@spawn @inbounds for k in chunk
             mul!(u_vectors[k], hamiltonian_matrix, search_vectors_list[:, k])
@@ -156,7 +156,7 @@ function Rayleigh_Ritz_matrix_building_single_chunk!(Ritz_matrix, search_vectors
 end
 
 function Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, hamiltonian_matrix)
-    chunks = Iterators.partition(axes(search_vectors_list,2), Int64(floor(length(axes(search_vectors_list,2)) / (2 * Threads.nthreads()))))
+    chunks = Iterators.partition(axes(search_vectors_list,2), max(2, Int64(floor(length(axes(search_vectors_list,2)) / (2 * Threads.nthreads())))))
     Threads.@sync for chunk in chunks
         Threads.@spawn Rayleigh_Ritz_matrix_building_single_chunk!(Ritz_matrix, search_vectors_list, hamiltonian_matrix, chunk)
     end

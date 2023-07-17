@@ -20,7 +20,7 @@ function hamiltonian_moments(max_degree, stochastic_dimension, hamiltonian_matri
     @inbounds Threads.@threads for r in 1:stochastic_dimension
         mul!(T_m_plus[r],  hamiltonian_matrix, T_m[r])
     end
-    chunks = Iterators.partition(1:stochastic_dimension, Int64(floor(length(1:stochastic_dimension)/Threads.nthreads())))
+    chunks = Iterators.partition(1:stochastic_dimension, max(2, Int64(floor(length(1:stochastic_dimension)/Threads.nthreads()))))
     @inbounds for n in 1:max_degree
         tasks = [Threads.@spawn hamiltonian_moments_single_chunk!(T_m, T_m_plus, random_states, hamiltonian_matrix, chunk) for chunk in chunks]
         moments_computed[n + 1] = sum(fetch.(tasks)) / stochastic_dimension
@@ -38,7 +38,7 @@ function hamiltonian_moments(max_degree, stochastic_dimension, hamiltonian_matri
     @inbounds Threads.@threads for r in 1:stochastic_dimension
         mul!(T_m_plus[r],  hamiltonian_matrix, T_m[r])
     end
-    chunks = Iterators.partition(1:stochastic_dimension, Int64(floor(length(1:stochastic_dimension)/Threads.nthreads())))
+    chunks = Iterators.partition(1:stochastic_dimension, max(2, Int64(floor(length(1:stochastic_dimension)/Threads.nthreads()))))
     @inbounds for n in 1:max_degree
         tasks = [Threads.@spawn hamiltonian_moments_single_chunk!(T_m, T_m_plus, random_states, hamiltonian_matrix, chunk) for chunk in chunks]
         moments_computed[n + 1] = sum(fetch.(tasks)) / stochastic_dimension
