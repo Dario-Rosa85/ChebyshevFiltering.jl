@@ -1,8 +1,10 @@
+###### new procedure with @spawn
+
 function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64}, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name)
     ########Random vectors inizialization
     search_vectors_list = orthogonalize_QR(randn(Float64, size(hamiltonian_matrix, 2), search_vector_numbers))
     Ritz_matrix = Matrix{Float64}(undef, size(search_vectors_list, 2), size(search_vectors_list, 2))
-    provisional_vector = map(x -> zeros(Float64, size(hamiltonian_matrix, 2)), 1:Threads.nthreads())
+    # provisional_vector = map(x -> zeros(Float64, size(hamiltonian_matrix, 2)), 1:Threads.nthreads())
     u_vectors = map(x -> zeros(Float64, size(hamiltonian_matrix, 2)), 1:search_vector_numbers)
     w_vectors = map(x -> zeros(Float64, size(hamiltonian_matrix, 2)), 1:search_vector_numbers)
     Ritz_vectors = map(x -> zeros(Float64, size(hamiltonian_matrix, 2)), 1:search_vector_numbers) 
@@ -12,12 +14,12 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
     while convergence_reached == "false"
         ##########################################################################################################
         ########Filtering step and orthogonalization
-        filtering_step!(search_vectors_list, u_vectors, w_vectors, provisional_vector, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
+        filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
         search_vectors_list = orthogonalize_QR(search_vectors_list)
         ##########################################################################################################
         ##########################################################################################################
         ########Ritz pairs and residuals computation
-        Ritz_values, residuals = Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, provisional_vector, hamiltonian_matrix)
+        Ritz_values, residuals = Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, hamiltonian_matrix)
         ##########################################################################################################
         ##########################################################################################################
         ########Convergence test
@@ -53,29 +55,56 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
     end
 end
 
-function filtering_step!(search_vectors_list::Matrix{Float64}, u_vectors::Vector{Vector{Float64}}, w_vectors::Vector{Vector{Float64}}, provisional_vector::Vector{Vector{Float64}}, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64})
-    length_chunks = collect(Iterators.partition(1:size(search_vectors_list, 2), Int64(floor(size(search_vectors_list, 2) / (Threads.nthreads())))))
-    @inbounds Threads.@threads :static for i in 1:Threads.nthreads() 
-        @inbounds for k in length_chunks[i]
+function filtering_step!(search_vectors_list::Matrix{Float64}, u_vectors::Vector{Vector{Float64}}, w_vectors::Vector{Vector{Float64}}, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64})
+    chunks = Iterators.partition(axes(search_vectors_list, 2), Int64(floor(length(axes(search_vectors_list, 2)) / (2 * Threads.nthreads()))))
+    Threads.@sync for chunk in chunks
+        Threads.@spawn @inbounds for k in chunk
             mul!(u_vectors[k], hamiltonian_matrix, search_vectors_list[:, k])
-            provisional_vector[Threads.threadid()] = search_vectors_list[:, k]
-            mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, u_vectors[k], 2.0, -1.0)
-            w_vectors[k] = provisional_vector[Threads.threadid()]
-            search_vectors_list[:, k] .= full_coeff[1] * search_vectors_list[:, k] .+ full_coeff[2] .* u_vectors[k] .+ full_coeff[3] .* w_vectors[k]   
-        end
-    end
-    @inbounds Threads.@threads :static for i in 1:Threads.nthreads()
-        @inbounds for k in length_chunks[i]
-            @inbounds for n in 4:polynomial_degree_optim 
-                provisional_vector[Threads.threadid()] = u_vectors[k]
-                mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, w_vectors[k], 2.0, -1.0)
+            provisional_vector = search_vectors_list[:, k]
+            mul!(provisional_vector, hamiltonian_matrix, u_vectors[k], 2.0, -1.0)
+            w_vectors[k] = provisional_vector
+            search_vectors_list[:, k] .= full_coeff[1] * search_vectors_list[:, k] .+ full_coeff[2] .* u_vectors[k] .+ full_coeff[3] .* w_vectors[k]
+            Threads.@spawn @inbounds for n in 4:polynomial_degree_optim 
+                provisional_vector = u_vectors[k]
+                mul!(provisional_vector, hamiltonian_matrix, w_vectors[k], 2.0, -1.0)
                 u_vectors[k] = w_vectors[k]
-                w_vectors[k] = provisional_vector[Threads.threadid()]
+                w_vectors[k] = provisional_vector
                 search_vectors_list[:, k] .+= full_coeff[n] .* w_vectors[k]
+            end                 
+        end
+    end 
+end
+
+
+function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix::Matrix{Float64}, Ritz_vectors::Vector{Vector{Float64}}, search_vectors_list::Matrix{Float64}, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64})
+    Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, hamiltonian_matrix) 
+    Rayleigh_Ritz_pairs = eigen(Ritz_matrix)
+    Ritz_values = real(Rayleigh_Ritz_pairs.values)
+    residuals = zeros(size(search_vectors_list, 2))
+    @inbounds Threads.@threads for i in 1:size(search_vectors_list, 2)
+        mul!(Ritz_vectors[i], search_vectors_list, Rayleigh_Ritz_pairs.vectors[:, i])
+        residuals[i] = norm(hamiltonian_matrix * Ritz_vectors[i] .- Ritz_values[i] .* Ritz_vectors[i])
+    end
+    return Ritz_values, residuals    
+end
+
+function Rayleigh_Ritz_matrix_building_single_chunk!(Ritz_matrix::Matrix{Float64}, search_vectors_list::Matrix{Float64}, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64}, chunk)
+    @inbounds for i in chunk
+        temp_vector = hamiltonian_matrix * search_vectors_list[:, i]
+        @inbounds for j in i:size(search_vectors_list, 2)
+            Ritz_matrix[j, i] = dot(search_vectors_list[:, j], temp_vector)
+            if j != i
+                Ritz_matrix[i, j] = conj(Ritz_matrix[j, i]) 
             end
         end
+    end 
+end
+
+function Rayleigh_Ritz_matrix_building!(Ritz_matrix::Matrix{Float64}, search_vectors_list::Matrix{Float64}, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64})
+    chunks = Iterators.partition(axes(search_vectors_list,2), Int64(floor(length(axes(search_vectors_list,2)) / (2 * Threads.nthreads()))))
+    Threads.@sync for chunk in chunks
+        Threads.@spawn Rayleigh_Ritz_matrix_building_single_chunk!(Ritz_matrix, search_vectors_list, hamiltonian_matrix, chunk)
     end
-    return search_vectors_list        
 end
 
 function convergence_test(Ritz_values, Ritz_vectors::Vector{Vector{Float64}}, residuals, lambda_min, lambda_max, epsilon_convergence)
@@ -95,26 +124,3 @@ function convergence_test(Ritz_values, Ritz_vectors::Vector{Vector{Float64}}, re
     return converged_target_values, converged_target_vectors, not_converged_residuals     
 end
 
-function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix::Matrix{Float64}, Ritz_vectors::Vector{Vector{Float64}}, search_vectors_list::Matrix{Float64}, provisional_vector::Vector{Vector{Float64}}, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64})
-    Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, provisional_vector, hamiltonian_matrix) 
-    Rayleigh_Ritz_pairs = eigen(Ritz_matrix)
-    Ritz_values = real(Rayleigh_Ritz_pairs.values)
-    residuals = zeros(size(search_vectors_list, 2))
-    @inbounds Threads.@threads :static for i in 1:size(search_vectors_list, 2)
-        mul!(Ritz_vectors[i], search_vectors_list, Rayleigh_Ritz_pairs.vectors[:, i])
-        residuals[i] = norm(hamiltonian_matrix * Ritz_vectors[i] .- Ritz_values[i] .* Ritz_vectors[i])
-    end
-    return Ritz_values, residuals    
-end
-
-function Rayleigh_Ritz_matrix_building!(Ritz_matrix::Matrix{Float64}, search_vectors_list::Matrix{Float64}, provisional_vector::Vector{Vector{Float64}}, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64})
-    @inbounds Threads.@threads :static for i in axes(search_vectors_list, 2)
-        mul!(provisional_vector[Threads.threadid()], hamiltonian_matrix, search_vectors_list[:, i]) 
-        @inbounds for j in i:size(search_vectors_list, 2)
-            Ritz_matrix[j, i] = dot(search_vectors_list[:, j], provisional_vector[Threads.threadid()])
-            if j != i
-                Ritz_matrix[i, j] = conj(Ritz_matrix[j, i]) 
-            end
-        end
-    end   
-end
