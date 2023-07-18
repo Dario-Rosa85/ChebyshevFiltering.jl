@@ -80,8 +80,18 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
     while convergence_reached == "false"
         ##########################################################################################################
         ########Filtering step and orthogonalization
-        filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
-        search_vectors_list = orthogonalize_QR(search_vectors_list)
+        if number_of_iterations == 0
+            for i in 1:4 
+                filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
+                search_vectors_list = orthogonalize_QR(search_vectors_list)
+                open(joinpath(log_path, log_file_name), "a") do io
+                    println(io, "Filtering step done. Time is ", Dates.now())
+                end
+            end
+        else
+            filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
+            search_vectors_list = orthogonalize_QR(search_vectors_list)
+        end
         ##########################################################################################################
         ##########################################################################################################
         ########Ritz pairs and residuals computation
@@ -90,6 +100,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
         ##########################################################################################################
         ########Convergence test
         converged_target_values, converged_target_vectors, not_converged_residuals = convergence_test(Ritz_values, Ritz_vectors, residuals, lambda_min, lambda_max, epsilon_convergence)
+        GC.gc()
         if length(not_converged_residuals) == 0
             convergence_reached = "true"
             if log_path != "none" && log_file_name != "none"
@@ -100,7 +111,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
             return converged_target_values, converged_target_vectors
         else
             smallest_not_converged_residual = first(sort(not_converged_residuals))
-            if ((epsilon_convergence < smallest_not_converged_residual < epsilon_convergence^(1/2)) || (number_of_iterations < 4) || (length(not_converged_residuals) > 10))
+            if ((epsilon_convergence < smallest_not_converged_residual < epsilon_convergence^(1/2)) || (length(not_converged_residuals) > 10))
                 convergence_reached = "false"
                 number_of_iterations += 1
                 if log_path != "none" && log_file_name != "none"
