@@ -15,7 +15,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
         ##########################################################################################################
         ########Filtering step and orthogonalization
         if number_of_iterations == 0
-            for i in 1:4 
+            for i in 1:3 
                 filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
                 search_vectors_list = orthogonalize_QR(search_vectors_list)
                 if log_path != "none" && log_file_name != "none"
@@ -83,7 +83,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
         ##########################################################################################################
         ########Filtering step and orthogonalization
         if number_of_iterations == 0
-            for i in 1:4 
+            for i in 1:3 
                 filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
                 search_vectors_list = orthogonalize_QR(search_vectors_list)
                 if log_path != "none" && log_file_name != "none"
