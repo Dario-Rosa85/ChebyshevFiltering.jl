@@ -1,7 +1,7 @@
 name = "ChebyshevFiltering"
 uuid = "1d56a567-eebb-4d79-96f4-589d6165ccdd"
 authors = ["Dario-Rosa85 <dario.rosa85@gmail.com>"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
