@@ -145,7 +145,7 @@ function filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_d
             mul!(provisional_vector, hamiltonian_matrix, u_vectors[k], 2.0, -1.0)
             w_vectors[k] = provisional_vector
             search_vectors_list[:, k] .= full_coeff[1] * search_vectors_list[:, k] .+ full_coeff[2] .* u_vectors[k] .+ full_coeff[3] .* w_vectors[k]
-            Threads.@spawn @inbounds for n in 4:polynomial_degree_optim 
+            @inbounds for n in 4:polynomial_degree_optim 
                 provisional_vector = u_vectors[k]
                 mul!(provisional_vector, hamiltonian_matrix, w_vectors[k], 2.0, -1.0)
                 u_vectors[k] = w_vectors[k]
