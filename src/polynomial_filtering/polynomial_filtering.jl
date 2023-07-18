@@ -18,8 +18,10 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
             for i in 1:4 
                 filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
                 search_vectors_list = orthogonalize_QR(search_vectors_list)
-                open(joinpath(log_path, log_file_name), "a") do io
-                    println(io, "Filtering step done. Time is ", Dates.now())
+                if log_path != "none" && log_file_name != "none"
+                    open(joinpath(log_path, log_file_name), "a") do io
+                        println(io, "Filtering step done. Time is ", Dates.now())
+                    end
                 end
             end
         else
@@ -84,8 +86,10 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
             for i in 1:4 
                 filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
                 search_vectors_list = orthogonalize_QR(search_vectors_list)
-                open(joinpath(log_path, log_file_name), "a") do io
-                    println(io, "Filtering step done. Time is ", Dates.now())
+                if log_path != "none" && log_file_name != "none"
+                    open(joinpath(log_path, log_file_name), "a") do io
+                        println(io, "Filtering step done. Time is ", Dates.now())
+                    end
                 end
             end
         else
