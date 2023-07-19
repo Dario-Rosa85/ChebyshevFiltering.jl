@@ -53,6 +53,6 @@ end
     ChebyshevFiltering.renormalization_hamiltonian!(hamiltonian_matrix)
     lambda_min = -0.1
     lambda_max = 0.1
-    converged_target_values, converged_target_vectors = eigen_cheb(hamiltonian_matrix, lambda_min, lambda_max)
+    converged_target_values, converged_target_vectors = eigen_cheb(hamiltonian_matrix, lambda_min=lambda_min, lambda_max=lambda_max, epsilon_convergence = 10^(-6), n_chunks_thread=1)
     @test isapprox(converged_target_values, [value  for value in eigvals(Matrix(hamiltonian_matrix)) if lambda_min < value < lambda_max])
 end

@@ -1,4 +1,4 @@
-function eigen_cheb(hamiltonian_matrix, lambda_min::Float64=-0.1, lambda_max::Float64=0.1, log_path="none", log_file_name="none", search_target_ratio::Float64=3.0, max_degree_KPM::Int64=150, stochastic_dimension_KPM::Int64=30, N_0::Float64=6.23, epsilon_convergence::Float64=10^(-7))
+function eigen_cheb(hamiltonian_matrix; lambda_min::Float64=-0.1, lambda_max::Float64=0.1, n_chunks_thread::Int64=2, n_first_iterations::Int64=3, epsilon_convergence::Float64=10^(-7), log_path="none", log_file_name="none", search_target_ratio::Float64=3.0, max_degree_KPM::Int64=150, stochastic_dimension_KPM::Int64=30, N_0::Float64=6.23)
     renormalization_hamiltonian!(hamiltonian_matrix)
     e_max = 1.
     e_min = -1.
@@ -19,7 +19,7 @@ function eigen_cheb(hamiltonian_matrix, lambda_min::Float64=-0.1, lambda_max::Fl
         full_coeff[i] = chebyshev_coeff[i] * damping_coeff[i]
     end
 
-    converged_target_values, converged_target_vectors = polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name)
+    converged_target_values, converged_target_vectors = polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name, n_chunks_thread, n_first_iterations)
 
     return converged_target_values, converged_target_vectors
 

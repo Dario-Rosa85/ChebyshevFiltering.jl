@@ -1,6 +1,6 @@
 ###### new procedure with @spawn
 
-function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64}, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name)
+function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{Float64, Int64}, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name, n_chunks_thread, n_first_iterations)
     ########Random vectors inizialization
     search_vectors_list = orthogonalize_QR(randn(Float64, size(hamiltonian_matrix, 2), search_vector_numbers))
     Ritz_matrix = Matrix{Float64}(undef, size(search_vectors_list, 2), size(search_vectors_list, 2))
@@ -15,9 +15,10 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
         ##########################################################################################################
         ########Filtering step and orthogonalization
         if number_of_iterations == 0
-            for i in 1:3 
-                filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
+            for i in 1:n_first_iterations 
+                filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix, n_chunks_thread)
                 search_vectors_list = orthogonalize_QR(search_vectors_list)
+                number_of_iterations += 1
                 if log_path != "none" && log_file_name != "none"
                     open(joinpath(log_path, log_file_name), "a") do io
                         println(io, "Filtering step done. Time is ", Dates.now())
@@ -25,13 +26,19 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
                 end
             end
         else
-            filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
+            filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix, n_chunks_thread)
             search_vectors_list = orthogonalize_QR(search_vectors_list)
+            number_of_iterations += 1
+            if log_path != "none" && log_file_name != "none"
+                open(joinpath(log_path, log_file_name), "a") do io
+                    println(io, "Filtering step done. Time is ", Dates.now())
+                end
+            end
         end
         ##########################################################################################################
         ##########################################################################################################
         ########Ritz pairs and residuals computation
-        Ritz_values, residuals = Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, hamiltonian_matrix)
+        Ritz_values, residuals = Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, hamiltonian_matrix, n_chunks_thread)
         ##########################################################################################################
         ##########################################################################################################
         ########Convergence test
@@ -47,9 +54,8 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
             return converged_target_values, converged_target_vectors
         else
             smallest_not_converged_residual = first(sort(not_converged_residuals))
-            if ((epsilon_convergence < smallest_not_converged_residual < epsilon_convergence^(1/2)) || (length(not_converged_residuals) > 10))
+            if ((epsilon_convergence < smallest_not_converged_residual < epsilon_convergence^(1/2)) || (number_of_iterations < 3) || (length(not_converged_residuals) > 10))
                 convergence_reached = "false"
-                number_of_iterations += 1
                 if log_path != "none" && log_file_name != "none"
                     open(joinpath(log_path, log_file_name), "a") do io
                         println(io, "Convergence not yet reached. Time is ", Dates.now())
@@ -68,7 +74,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
     end
 end
 
-function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{ComplexF64, Int64}, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name)
+function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, full_coeff, hamiltonian_matrix::SparseMatrixCSC{ComplexF64, Int64}, lambda_max, lambda_min, epsilon_convergence, log_path, log_file_name, n_chunks_thread, n_first_iterations)
     ########Random vectors inizialization
     search_vectors_list = orthogonalize_QR(randn(ComplexF64, size(hamiltonian_matrix, 2), search_vector_numbers))
     Ritz_matrix = Matrix{ComplexF64}(undef, size(search_vectors_list, 2), size(search_vectors_list, 2))
@@ -83,9 +89,10 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
         ##########################################################################################################
         ########Filtering step and orthogonalization
         if number_of_iterations == 0
-            for i in 1:3 
-                filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
+            for i in 1:n_first_iterations 
+                filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix, n_chunks_thread)
                 search_vectors_list = orthogonalize_QR(search_vectors_list)
+                number_of_iterations += 1
                 if log_path != "none" && log_file_name != "none"
                     open(joinpath(log_path, log_file_name), "a") do io
                         println(io, "Filtering step done. Time is ", Dates.now())
@@ -93,13 +100,19 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
                 end
             end
         else
-            filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
+            filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix, n_chunks_thread)
             search_vectors_list = orthogonalize_QR(search_vectors_list)
+            number_of_iterations += 1
+            if log_path != "none" && log_file_name != "none"
+                open(joinpath(log_path, log_file_name), "a") do io
+                    println(io, "Filtering step done. Time is ", Dates.now())
+                end
+            end
         end
         ##########################################################################################################
         ##########################################################################################################
         ########Ritz pairs and residuals computation
-        Ritz_values, residuals = Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, hamiltonian_matrix)
+        Ritz_values, residuals = Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, hamiltonian_matrix, n_chunks_thread)
         ##########################################################################################################
         ##########################################################################################################
         ########Convergence test
@@ -115,7 +128,7 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
             return converged_target_values, converged_target_vectors
         else
             smallest_not_converged_residual = first(sort(not_converged_residuals))
-            if ((epsilon_convergence < smallest_not_converged_residual < epsilon_convergence^(1/2)) || (length(not_converged_residuals) > 10))
+            if ((epsilon_convergence < smallest_not_converged_residual < epsilon_convergence^(1/2)) ||(number_of_iterations < 3) || (length(not_converged_residuals) > 10))
                 convergence_reached = "false"
                 number_of_iterations += 1
                 if log_path != "none" && log_file_name != "none"
@@ -136,8 +149,8 @@ function polynomial_filtering(search_vector_numbers, polynomial_degree_optim, fu
     end
 end
 
-function filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix)
-    chunks = Iterators.partition(axes(search_vectors_list, 2), max(2,Int64(floor(length(axes(search_vectors_list, 2)) / (2 * Threads.nthreads())))))
+function filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_degree_optim, full_coeff, hamiltonian_matrix, n_chunks_thread)
+    chunks = Iterators.partition(axes(search_vectors_list, 2), max(2,Int64(floor(length(axes(search_vectors_list, 2)) / (n_chunks_thread * Threads.nthreads())))))
     Threads.@sync for chunk in chunks
         Threads.@spawn @inbounds for k in chunk
             mul!(u_vectors[k], hamiltonian_matrix, search_vectors_list[:, k])
@@ -157,8 +170,8 @@ function filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_d
 end
 
 
-function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, hamiltonian_matrix)
-    Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, hamiltonian_matrix) 
+function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vectors_list, hamiltonian_matrix, n_chunks_thread)
+    Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, hamiltonian_matrix, n_chunks_thread) 
     Rayleigh_Ritz_pairs = eigen(Ritz_matrix)
     Ritz_values = real(Rayleigh_Ritz_pairs.values)
     residuals = zeros(size(search_vectors_list, 2))
@@ -181,8 +194,8 @@ function Rayleigh_Ritz_matrix_building_single_chunk!(Ritz_matrix, search_vectors
     end 
 end
 
-function Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, hamiltonian_matrix)
-    chunks = Iterators.partition(axes(search_vectors_list,2), max(2, Int64(floor(length(axes(search_vectors_list,2)) / (2 * Threads.nthreads())))))
+function Rayleigh_Ritz_matrix_building!(Ritz_matrix, search_vectors_list, hamiltonian_matrix, n_chunks_thread)
+    chunks = Iterators.partition(axes(search_vectors_list,2), max(2, Int64(floor(length(axes(search_vectors_list,2)) / (n_chunks_thread * Threads.nthreads())))))
     Threads.@sync for chunk in chunks
         Threads.@spawn Rayleigh_Ritz_matrix_building_single_chunk!(Ritz_matrix, search_vectors_list, hamiltonian_matrix, chunk)
     end
