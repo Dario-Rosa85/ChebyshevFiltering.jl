@@ -153,19 +153,19 @@ function filtering_step!(search_vectors_list, u_vectors, w_vectors, polynomial_d
     chunks = Iterators.partition(axes(search_vectors_list, 2), max(2,Int64(floor(length(axes(search_vectors_list, 2)) / (n_chunks_thread * Threads.nthreads())))))
     Threads.@sync for chunk in chunks
         Threads.@spawn @inbounds for k in chunk
-            mul!(u_vectors[k], hamiltonian_matrix, search_vectors_list[:, k])
+            mul!(u_vectors[k], hamiltonian_matrix, (@view search_vectors_list[:, k]))
             provisional_vector = search_vectors_list[:, k]
             mul!(provisional_vector, hamiltonian_matrix, u_vectors[k], 2.0, -1.0)
             w_vectors[k] = provisional_vector
-            search_vectors_list[:, k] .= full_coeff[1] * search_vectors_list[:, k] .+ full_coeff[2] .* u_vectors[k] .+ full_coeff[3] .* w_vectors[k]
+            @view(search_vectors_list[:, k]) .= full_coeff[1] .* (@view search_vectors_list[:, k]) .+ full_coeff[2] .* u_vectors[k] .+ full_coeff[3] .* w_vectors[k]
             @inbounds for n in 4:polynomial_degree_optim 
                 provisional_vector = u_vectors[k]
                 mul!(provisional_vector, hamiltonian_matrix, w_vectors[k], 2.0, -1.0)
                 u_vectors[k] = w_vectors[k]
                 w_vectors[k] = provisional_vector
-                search_vectors_list[:, k] .+= full_coeff[n] .* w_vectors[k]
+                (@view search_vectors_list[:, k]) .+= full_coeff[n] .* w_vectors[k]
             end                 
-        end
+        end         
     end 
 end
 
@@ -176,7 +176,7 @@ function Rayleigh_Ritz_pairs_residuals!(Ritz_matrix, Ritz_vectors, search_vector
     Ritz_values = real(Rayleigh_Ritz_pairs.values)
     residuals = zeros(size(search_vectors_list, 2))
     @inbounds Threads.@threads for i in 1:size(search_vectors_list, 2)
-        mul!(Ritz_vectors[i], search_vectors_list, Rayleigh_Ritz_pairs.vectors[:, i])
+        mul!(Ritz_vectors[i], search_vectors_list, (@view Rayleigh_Ritz_pairs.vectors[:, i]))
         residuals[i] = norm(hamiltonian_matrix * Ritz_vectors[i] .- Ritz_values[i] .* Ritz_vectors[i])
     end
     return Ritz_values, residuals    
@@ -184,9 +184,9 @@ end
 
 function Rayleigh_Ritz_matrix_building_single_chunk!(Ritz_matrix, search_vectors_list, hamiltonian_matrix, chunk)
     @inbounds for i in chunk
-        temp_vector = hamiltonian_matrix * search_vectors_list[:, i]
+        temp_vector = hamiltonian_matrix * (@view search_vectors_list[:, i])
         @inbounds for j in i:size(search_vectors_list, 2)
-            Ritz_matrix[j, i] = dot(search_vectors_list[:, j], temp_vector)
+            Ritz_matrix[j, i] = dot((@view search_vectors_list[:, j]), temp_vector)
             if j != i
                 Ritz_matrix[i, j] = conj(Ritz_matrix[j, i]) 
             end
